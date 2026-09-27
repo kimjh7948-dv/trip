@@ -266,6 +266,58 @@
     .tl::before{left:50px}
     .time{left:-64px;width:50px;padding-right:12px;font-size:11.5px}
   }
+
+  /* ── 메모장 (평소 닫힘 · 탭하면 열림) ── */
+  .memo-fab{
+    position:fixed;right:18px;bottom:18px;z-index:80;
+    width:52px;height:52px;border-radius:14px;border:none;cursor:pointer;
+    background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 20px rgba(15,46,61,.28);transition:.15s;
+  }
+  .memo-fab:active{transform:scale(.94)}
+  .memo-fab svg{width:23px;height:23px}
+  .memo-fab.has-content{background:var(--sunset)}
+  .memo-fab:focus-visible{outline:2px solid var(--sea);outline-offset:3px}
+  .memo-backdrop{
+    position:fixed;inset:0;background:rgba(15,46,61,.35);z-index:85;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .memo-backdrop.open{opacity:1;pointer-events:auto}
+  .memo-panel{
+    position:fixed;left:0;right:0;bottom:0;z-index:90;max-width:760px;margin:0 auto;
+    background:var(--card);border-radius:20px 20px 0 0;box-shadow:0 -10px 34px rgba(15,46,61,.2);
+    display:flex;flex-direction:column;max-height:72vh;
+    transform:translateY(112%);transition:transform .28s ease;
+  }
+  .memo-panel.open{transform:translateY(0)}
+  .memo-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+    padding:15px 16px 12px;border-bottom:1px solid var(--line);flex:0 0 auto;
+  }
+  .memo-title{font-size:15px;font-weight:800}
+  .memo-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px}
+  .memo-close{
+    flex:0 0 auto;background:var(--chip-bg);border:none;border-radius:8px;
+    width:30px;height:30px;font-size:15px;color:var(--ink-soft);cursor:pointer;
+  }
+  .memo-body{flex:1;padding:14px 16px;overflow:auto}
+  #memoText{
+    width:100%;height:100%;min-height:170px;box-sizing:border-box;
+    border:1px solid var(--line);border-radius:12px;padding:12px 13px;
+    font-family:inherit;font-size:14px;line-height:1.65;color:var(--ink);
+    background:#FFFDF8;resize:vertical;
+  }
+  #memoText:focus{outline:2px solid var(--sea);outline-offset:1px}
+  #memoText::placeholder{color:#B8C4C8}
+  .memo-foot{
+    flex:0 0 auto;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .memo-status{font-size:11.5px;color:#9AA9AE;font-weight:600}
+  .memo-clear{background:none;border:none;font-size:12px;font-weight:800;color:#C4502A;cursor:pointer;padding:4px}
+  @media (prefers-reduced-motion:reduce){
+    .memo-panel, .memo-backdrop{transition:none}
+  }
 </style>
 </head>
 <body>
@@ -291,6 +343,28 @@
 <main id="main"></main>
 
 <footer>지도 · 길찾기 · 거리뷰 버튼은 구글맵 앱/웹으로 바로 연결됩니다. 길찾기는 현재 위치 기준.</footer>
+
+<button id="memoFab" class="memo-fab" aria-label="메모장 열기" aria-expanded="false" aria-controls="memoPanel">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 19.4V6a2 2 0 0 1 2-2h8.5L19 8.5V19.4a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 19.4Z"/>
+    <path d="M14.2 4v3.8a1 1 0 0 0 1 1H19"/>
+    <path d="M7.5 12.5h9M7.5 16h6"/>
+  </svg>
+</button>
+<div id="memoBackdrop" class="memo-backdrop"></div>
+<div id="memoPanel" class="memo-panel" role="dialog" aria-modal="true" aria-labelledby="memoTitleTxt">
+  <div class="memo-head">
+    <div><div class="memo-title" id="memoTitleTxt">📝 메모장</div><div class="memo-sub">자유롭게 적어두면 이 기기에 자동 저장돼요</div></div>
+    <button id="memoClose" class="memo-close" aria-label="메모장 닫기">✕</button>
+  </div>
+  <div class="memo-body">
+    <textarea id="memoText" placeholder="예) 여권번호, 현지에서 챙길 것, 갑자기 생각난 것...&#10;&#10;탭하면 자동으로 저장됩니다."></textarea>
+  </div>
+  <div class="memo-foot">
+    <span class="memo-status" id="memoStatus">저장된 메모 없음</span>
+    <button id="memoClear" class="memo-clear">전체 지우기</button>
+  </div>
+</div>
 
 <script>
 /* ───────── 장소 데이터 (구글 Place ID + 좌표) ───────── */
@@ -710,6 +784,72 @@ function show(i){
   document.querySelectorAll(".day").forEach((d,j)=>d.classList.toggle("show", j===i));
   window.scrollTo({top:0, behavior:"smooth"});
 }
+
+/* ───────── 메모장 (기본 닫힘 · 자동 저장) ───────── */
+(function(){
+  const KEY = "pq_trip_memo_v1";
+  const fab = document.getElementById("memoFab");
+  const panel = document.getElementById("memoPanel");
+  const backdrop = document.getElementById("memoBackdrop");
+  const closeBtn = document.getElementById("memoClose");
+  const clearBtn = document.getElementById("memoClear");
+  const ta = document.getElementById("memoText");
+  const statusEl = document.getElementById("memoStatus");
+
+  function fmtTime(){
+    const d = new Date();
+    return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  }
+
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ ta.value = raw; fab.classList.add("has-content"); statusEl.textContent = "저장됨 · 이전 메모 불러옴"; }
+  }catch(e){}
+
+  function openPanel(){
+    panel.classList.add("open");
+    backdrop.classList.add("open");
+    fab.setAttribute("aria-expanded","true");
+    setTimeout(()=>{ try{ ta.focus(); }catch(e){} }, 220);
+  }
+  function closePanel(){
+    panel.classList.remove("open");
+    backdrop.classList.remove("open");
+    fab.setAttribute("aria-expanded","false");
+  }
+  fab.addEventListener("click", ()=> panel.classList.contains("open") ? closePanel() : openPanel());
+  closeBtn.addEventListener("click", closePanel);
+  backdrop.addEventListener("click", closePanel);
+  document.addEventListener("keydown", e=>{
+    if(e.key==="Escape" && panel.classList.contains("open")) closePanel();
+  });
+
+  let saveTimer;
+  ta.addEventListener("input", ()=>{
+    statusEl.textContent = "입력 중…";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      try{
+        localStorage.setItem(KEY, ta.value);
+        fab.classList.toggle("has-content", ta.value.trim().length > 0);
+        statusEl.textContent = ta.value.trim() ? ("저장됨 · "+fmtTime()) : "저장된 메모 없음";
+      }catch(e){
+        statusEl.textContent = "저장 실패 (저장공간 부족?)";
+      }
+    }, 450);
+  });
+
+  clearBtn.addEventListener("click", ()=>{
+    if(!ta.value.trim()) return;
+    if(confirm("메모를 전부 지울까요?")){
+      ta.value = "";
+      try{ localStorage.removeItem(KEY); }catch(e){}
+      fab.classList.remove("has-content");
+      statusEl.textContent = "저장된 메모 없음";
+      ta.focus();
+    }
+  });
+})();
 </script>
 </body>
 </html>
