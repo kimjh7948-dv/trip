@@ -318,6 +318,28 @@
   @media (prefers-reduced-motion:reduce){
     .memo-panel, .memo-backdrop{transition:none}
   }
+
+  /* ── 일정 카드별 인라인 메모 ── */
+  .note-wrap{margin-top:9px}
+  .note-toggle{
+    display:inline-flex;align-items:center;gap:5px;
+    background:#fff;border:1px solid var(--line);color:var(--ink-soft);
+    font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;
+    cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .note-toggle::before{content:"🗒️";font-size:12px}
+  .note-toggle.has-note{background:#FFF3EC;border-color:#F7D4C0;color:#C4502A}
+  .note-box{display:none;margin-top:8px}
+  .note-box.open{display:block}
+  .note-ta{
+    width:100%;box-sizing:border-box;min-height:64px;
+    border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+    font-family:inherit;font-size:13px;line-height:1.55;color:var(--ink);
+    background:#FFFDF8;resize:vertical;
+  }
+  .note-ta:focus{outline:2px solid var(--sea);outline-offset:1px}
+  .note-ta::placeholder{color:#B8C4C8}
+  .note-status{font-size:11px;color:#9AA9AE;margin-top:4px;font-weight:600}
 </style>
 </head>
 <body>
@@ -536,8 +558,9 @@ DAYS.forEach((day,i)=>{
       <div class="day-title">${day.d} (${day.w}) · ${day.title}</div>
       <div class="day-sub">${day.sub}</div>
     </div><div class="tl">`;
-  day.items.forEach(it=>{
+  day.items.forEach((it,j)=>{
     const cls = it.type==="meal" ? "item meal" : it.type==="move" ? "item move" : "item";
+    const nk = i+"_"+j;
     html += `<div class="${cls}">
       <div class="time">${it.t}</div>
       <div class="card">
@@ -545,6 +568,13 @@ DAYS.forEach((day,i)=>{
         <h3>${it.h}</h3>
         ${it.p ? `<p>${it.p}</p>` : ""}
         ${acts(it.loc, it.loc2)}
+        <div class="note-wrap">
+          <button type="button" class="note-toggle" data-nk="${nk}">메모</button>
+          <div class="note-box" data-nk="${nk}">
+            <textarea class="note-ta" placeholder="이 일정에 메모 남기기 (준비물, 예약번호, 생각난 것...)"></textarea>
+            <div class="note-status">저장된 메모 없음</div>
+          </div>
+        </div>
       </div>
     </div>`;
   });
@@ -553,6 +583,59 @@ DAYS.forEach((day,i)=>{
   sec.innerHTML = html;
   mainEl.appendChild(sec);
 });
+
+/* ───────── 일정 카드별 인라인 메모 저장/복원 ───────── */
+(function(){
+  const PREFIX = "pq_note_";
+  function fmtHM(){
+    const d = new Date();
+    return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  }
+  // 저장된 메모 복원 (버튼에 표시 + 텍스트 미리 채워둠, 박스는 접힌 채로)
+  mainEl.querySelectorAll(".note-toggle").forEach(btn=>{
+    const nk = btn.dataset.nk;
+    let raw = null;
+    try{ raw = localStorage.getItem(PREFIX+nk); }catch(e){}
+    if(raw){
+      btn.classList.add("has-note");
+      const box = btn.parentElement.querySelector(".note-box");
+      const ta = box.querySelector(".note-ta");
+      const st = box.querySelector(".note-status");
+      ta.value = raw;
+      st.textContent = "저장됨";
+    }
+  });
+  mainEl.addEventListener("click", e=>{
+    const btn = e.target.closest(".note-toggle");
+    if(!btn) return;
+    const box = btn.parentElement.querySelector(".note-box");
+    const opened = box.classList.toggle("open");
+    if(opened){ const ta = box.querySelector(".note-ta"); setTimeout(()=>{ try{ ta.focus(); }catch(e){} }, 150); }
+  });
+  mainEl.addEventListener("input", e=>{
+    if(!e.target.classList.contains("note-ta")) return;
+    const ta = e.target;
+    const box = ta.closest(".note-box");
+    const nk = box.dataset.nk;
+    const btn = box.parentElement.querySelector(".note-toggle");
+    const st = box.querySelector(".note-status");
+    st.textContent = "입력 중…";
+    clearTimeout(box._saveTm);
+    box._saveTm = setTimeout(()=>{
+      try{
+        if(ta.value.trim()){
+          localStorage.setItem(PREFIX+nk, ta.value);
+          btn.classList.add("has-note");
+          st.textContent = "저장됨 · "+fmtHM();
+        } else {
+          localStorage.removeItem(PREFIX+nk);
+          btn.classList.remove("has-note");
+          st.textContent = "저장된 메모 없음";
+        }
+      }catch(err){ st.textContent = "저장 실패 (저장공간 부족?)"; }
+    }, 450);
+  });
+})();
 
 /* ───────── 추천 리스트 (구글시트 기반 · 구글맵 교차검증) ───────── */
 const GEM = [
