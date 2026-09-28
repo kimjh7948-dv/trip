@@ -340,6 +340,20 @@
   .note-ta:focus{outline:2px solid var(--sea);outline-offset:1px}
   .note-ta::placeholder{color:#B8C4C8}
   .note-status{font-size:11px;color:#9AA9AE;margin-top:4px;font-weight:600}
+
+  /* ── 저장 안됨 경고 배너 ── */
+  .storage-banner{
+    position:sticky;top:0;z-index:120;
+    background:#FFF0E8;border-bottom:1px solid #F3C9AE;
+    color:#8A3B1B;font-size:12.5px;line-height:1.55;font-weight:600;
+    padding:10px 14px;display:flex;gap:8px;align-items:flex-start;
+  }
+  .storage-banner b{font-weight:800}
+  .storage-banner .sb-x{
+    flex:0 0 auto;background:none;border:none;color:#8A3B1B;font-size:15px;
+    cursor:pointer;padding:0 2px;line-height:1;opacity:.7;
+  }
+  .storage-banner .sb-txt{flex:1}
 </style>
 </head>
 <body>
@@ -544,6 +558,46 @@ const badgeLabel = {eat:"맛집", spot:"관광", spa:"마사지", fly:"이동"};
 
 const tabsEl = document.getElementById("tabs");
 const mainEl = document.getElementById("main");
+
+/* ───────── 저장(localStorage) 가능 여부 진단 배너 ─────────
+   맛집 체크/날짜 마킹/체크리스트/메모가 전부 이 브라우저의
+   localStorage에 저장됨. 아이폰 카카오톡 인앱브라우저나
+   프라이빗 모드에서는 저장이 안 되거나 앱을 닫으면 날아갈 수
+   있어서, 그 경우 화면 상단에 이유와 함께 안내를 띄운다. */
+(function(){
+  function storageWorks(){
+    try{
+      const k = "__ls_probe__";
+      localStorage.setItem(k, "1");
+      const ok = localStorage.getItem(k) === "1";
+      localStorage.removeItem(k);
+      return ok;
+    }catch(e){ return false; }
+  }
+  const ua = navigator.userAgent || "";
+  const inKakao   = /KAKAOTALK/i.test(ua);
+  const inInsta   = /Instagram/i.test(ua);
+  const inFb      = /FBAN|FBAV/i.test(ua);
+  const inLine    = /\bLine\//i.test(ua);
+  const inNaver   = /NAVER\(/i.test(ua);
+  const inAppName = inKakao ? "카카오톡" : inInsta ? "인스타그램" : inFb ? "페이스북"
+                    : inLine ? "라인" : inNaver ? "네이버 앱" : null;
+
+  const okNow = storageWorks();
+  let msg = null;
+  if(!okNow){
+    msg = "이 브라우저에서는 <b>저장이 꺼져 있어요</b>. 아이폰이면 설정 → Safari → '모든 쿠키 차단'을 꺼주세요. 프라이빗(비공개) 탭이면 일반 탭으로 열어주세요.";
+  } else if(inAppName){
+    msg = `지금 <b>${inAppName} 인앱브라우저</b>로 열려 있어요. 여기서는 메모·체크리스트가 저장돼도 다음에 링크를 다시 열면 사라질 수 있어요. 우측 상단 ⋯(또는 공유) 버튼 → <b>'Safari로 열기'</b>를 눌러서 열어주세요.`;
+  }
+  if(msg){
+    const bar = document.createElement("div");
+    bar.className = "storage-banner";
+    bar.innerHTML = `<div class="sb-txt">⚠️ ${msg}</div><button type="button" class="sb-x" aria-label="닫기">✕</button>`;
+    bar.querySelector(".sb-x").addEventListener("click", ()=> bar.remove());
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+})();
 
 DAYS.forEach((day,i)=>{
   const tab = document.createElement("button");
