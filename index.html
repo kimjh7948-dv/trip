@@ -313,8 +313,14 @@
     flex:0 0 auto;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));
     display:flex;align-items:center;justify-content:space-between;gap:10px;
   }
-  .memo-status{font-size:11.5px;color:#9AA9AE;font-weight:600}
-  .memo-clear{background:none;border:none;font-size:12px;font-weight:800;color:#C4502A;cursor:pointer;padding:4px}
+  .memo-status{font-size:11.5px;color:#9AA9AE;font-weight:600;flex:1;min-width:0}
+  .memo-foot-btns{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+  .memo-clear{background:none;border:none;font-size:12px;font-weight:800;color:#C4502A;cursor:pointer;padding:4px 6px}
+  .memo-copy{
+    background:var(--sea,#0F7A8C);color:#fff;border:none;border-radius:8px;
+    font-size:11.5px;font-weight:800;padding:7px 10px;cursor:pointer;white-space:nowrap;
+  }
+  .memo-copy:active{opacity:.85}
   @media (prefers-reduced-motion:reduce){
     .memo-panel, .memo-backdrop{transition:none}
   }
@@ -398,7 +404,10 @@
   </div>
   <div class="memo-foot">
     <span class="memo-status" id="memoStatus">저장된 메모 없음</span>
-    <button id="memoClear" class="memo-clear">전체 지우기</button>
+    <div class="memo-foot-btns">
+      <button id="memoCopyAll" class="memo-copy">📋 전체 메모 복사</button>
+      <button id="memoClear" class="memo-clear">전체 지우기</button>
+    </div>
   </div>
 </div>
 
@@ -474,7 +483,7 @@ const DAYS = [
    {t:"14:00", h:"Triple E Hotel 체크인", p:"Ký Con 거리 · 벤탄시장 도보권. 짐 풀고 바로 출발", loc:P.tripleE, badge:"spot"},
    {t:"14:30", h:"사이공스퀘어 쇼핑", p:"호텔에서 도보 10분. <b>흥정 필수</b> — 첫 부르는 값의 30~50%부터 시작ㅋㅋ", loc:P.sgSquare, badge:"spot"},
    {t:"17:00", type:"meal", h:"맛찬들 왕소금구이 저녁 (1군)", p:"Tôn Thất Tùng 거리 · 평점 4.7(리뷰 1,500+). 호텔에서 도보 20분 or 그랩 5분. 직원이 <b>테이블에서 직접 구워줌</b> · LA갈비 호평 · 반찬 리필 후함", loc:P.matchandeul, badge:"eat"},
-   {t:"19:00", type:"meal", h:"더목스파 (The Mộc Spa) 마사지", p:"Lê Thị Riêng 거리 · 평점 4.8. 저녁 타임 <b>사전 예약</b> 권장 (워크인 대기 김)", loc:P.mocSpa, badge:"spa"},
+   {t:"19:30", type:"meal", h:"더목스파 (The Mộc Spa) 마사지 90분", p:"Lê Thị Riêng 거리 · 평점 4.8 · <b>19:30~21:00 (90분 코스)</b>. 사전 예약 권장 (워크인 대기 김)", loc:P.mocSpa, badge:"spa"},
    {t:"21:00", h:"벤탄시장 야시장", p:"시장 본관은 일찍 닫고 바깥 노점이 밤장사. 마사지 후 소화 산책 코스", loc:P.benThanh, badge:"spot"},
    {t:"22:00", h:"야간 옵션 (체력 봐서 택1)", p:"① 부이비엔 워킹스트리트 — 시끌벅적 맥주거리 ② 응우옌후에 보행자거리 — 야경 산책", loc:P.buiVien, loc2:P.nguyenHue, badge:"spot"}
   ],
@@ -525,14 +534,14 @@ const DAYS = [
    {t:"15:00", type:"meal", h:"YUJU Spa 마사지 90분", p:"한국인 운영 · 평점 4.9(리뷰 5,800+) · <b>무료 픽업/드롭</b>. 리조트로 차량 요청 가능. 사전 예약 필수", loc:P.yuju, badge:"spa"},
    {t:"17:15", h:"선셋 사나토 비치클럽", p:"설치미술 포토스팟 · 일몰 1시간 전 도착 추천. 귀찮으면 리조트 선셋으로 대체ㅋㅋ", loc:P.sanato, badge:"spot"},
    {t:"19:00", type:"meal", h:"Si's Crab House 저녁", p:"크랩 전문 · 야시장 코앞. 소스 범벅 스타일. 담백파는 MYLA로 변경 가능", loc:P.crabHouse, badge:"eat"},
-   {t:"21:00", h:"야시장 마지막 쇼핑 → 귀가", p:"기념품 정리 + 오늘 밤 짐 싸기. 프론트에 내일 조식 도시락(breakfast box) 요청", loc:P.nightMkt, badge:"spot"}
+   {t:"21:00", h:"야시장 마지막 쇼핑 → 귀가", p:"기념품 정리 + 오늘 밤 짐 싸기. 내일 새벽 체크아웃이니 가방 미리 꾸려두기", loc:P.nightMkt, badge:"spot"}
   ],
   tip:"<b>TIP</b><ul><li>YUJU Spa는 자정까지 영업이라 일정 밀려도 유연함</li><li>내일 새벽 이동 대비 — 체크아웃 정산 미리 해두면 아침이 편함</li></ul>"
 },
-{ d:"10/9", w:"금", title:"푸꾸옥 → 호치민 경유 → <em>인천</em>", sub:"이른 출발 · 환승 3시간 10분",
+{ d:"10/9", w:"금", title:"푸꾸옥 → 호치민 경유 → <em>인천</em>", sub:"여유로운 출발 · 환승 3시간 10분",
   items:[
-   {t:"06:15", type:"meal", h:"이른 조식 or 도시락", p:"조식 오픈 전이면 전날 요청한 breakfast box로", loc:P.pullman, badge:"eat"},
-   {t:"07:00", type:"move", h:"체크아웃 → 공항 (10분)", p:"국내선 체크인 카운터에서 <b>인천까지 수하물 스루체크인 여부 확인</b>", loc:P.pqcApt, badge:"fly"},
+   {t:"06:30", type:"meal", h:"조식", p:"풀만 조식 레스토랑에서 정상 조식 (호텔 도시락 제공 없음)", loc:P.pullman, badge:"eat"},
+   {t:"08:05", type:"move", h:"체크아웃 → 공항 (10분)", p:"국내선이라 출발 <b>1시간 20분 전 도착</b>이면 충분 · 인천까지 수하물 스루체크인 여부 확인", loc:P.pqcApt, badge:"fly"},
    {t:"09:35", type:"move", h:"VN1822 → 10:45 호치민", p:"스루체크인 안 되면 짐 찾아서 국제선(T2) 이동 — 도보 3~5분, 시간 충분", loc:P.sgnApt, badge:"fly"},
    {t:"13:55", type:"move", h:"KE472 → 21:25 인천 도착", p:"수고하셨습니다 ✈️ 면세점은 T2 출국장에서", badge:"fly"}
   ],
@@ -709,7 +718,7 @@ const GEM = [
   {n:"베르샤유 머드스파", cat:"스파", m:"천연 머드탕 + 비치클럽 + 19시 파이어쇼", chk:"ok", c:"평점 4.7 · 리뷰 970+. 리조트~즈엉동 중간 위치. 10/8 YUJU 대신 이색 체험 원하면 여기", loc:P.versailles},
   {n:"오선빠 (OCSEN)", cat:"비치 바", m:"칵테일 · 22시 파이어쇼", chk:"warn", c:"⚠️ 재미나이는 '카페'라 했지만 실제론 16시 오픈 비치 바/클럽. 커피 말고 저녁 술+쇼 스팟", loc:P.ocsen},
   {n:"Chuồn Chuồn Bistro & Bar", cat:"전망 카페", m:"브런치 · 칵테일 · 케이크", chk:"ok", c:"평점 4.3 · 언덕 위 시내+오션 파노라마. 뷰값 포함된 가격ㅋㅋ 루프탑 자리 요청", loc:P.chuonChuon},
-  {n:"킹콩마트", cat:"쇼핑", m:"후추 · 건망고 · 커피 · 기념품", chk:"ok", c:"평점 4.4 · 푸꾸옥 최대 마트. 정찰제라 야시장보다 이득 — 10/8 저녁 기념품 여기서 해결 추천", loc:P.kingkong}
+  {n:"킹콩마트", cat:"슈퍼마켓", m:"후추 · 건망고 · 커피 · 기념품", chk:"ok", c:"평점 4.4 · 푸꾸옥 최대 슈퍼마켓(맛집 아님). 정찰제라 야시장보다 이득 — 10/8 저녁 기념품 여기서 해결 추천", loc:P.kingkong}
 ]},
 { region:"남부 · 선셋타운/소나시", items:[
   {n:"Caveman Smoked Ribs & Craft Beer", cat:"웨스턴 BBQ", m:"참나무 훈제 립 플래터 · 수제맥주", chk:"ok", c:"평점 4.6 · 선셋타운 내. 10/6 저녁 RuNam 대신 고기+맥주 무드면 여기로 스왑 가능", loc:P.caveman},
@@ -843,7 +852,7 @@ const CK = [
   {t:"인천공항 T2 장기주차 예약", must:true, d:"인천공항 주차예약 시스템에서 사전 예약. 6일 주차 약 5~6만원대"},
   {t:"풀만 공항픽업 신청", must:true, d:"VN1827 · 10/5 14:00 도착 정보를 리조트에 이메일/예약사이트로 전달"},
   {t:"여행자보험 가입", d:"우기 끝자락 + 해양 액티비티 대비. 온라인 가입 5분이면 끝"},
-  {t:"[10/4] 더목스파 예약", must:true, d:"호치민 1군 · 19:00 타임. 홈페이지/카톡 채널로 예약 — 저녁은 워크인 대기 김"},
+  {t:"[10/4] 더목스파 예약", must:true, d:"호치민 1군 · 19:30 타임 · 90분 코스. 홈페이지/카톡 채널로 예약 — 저녁은 워크인 대기 김"},
   {t:"[10/6] RuNam Sunset Town 예약", must:true, d:"18시대 필수 — 20:10 이후 예약은 불꽃 콤보 강제. 예약 시 분수쇼 뷰 자리 요청"},
   {t:"[10/6] Kiss of the Sea 쇼 티켓 예매", d:"21시 공연 · 공식몰/Klook 사전 예매. 좌석 구역별 가격 상이"},
   {t:"[10/7] 사파리+빈원더스 콤보 티켓", d:"Klook/공식몰 온라인가가 현장가보다 저렴. 날씨 보고 D-1 구매도 OK"},
@@ -874,7 +883,7 @@ const CK = [
   {t:"여권 + 지갑 + 폰 3종 최종 확인", must:true, d:"이거 3개만 있으면 나머진 현지 해결 가능ㅋㅋ"},
   {t:"집 점검", d:"가스밸브 · 창문 · 냉장고 정리 · 콘센트. 6일 비움 기준"},
   {t:"하이패스 잔액 확인", d:"공항고속도로 통행료"},
-  {t:"10/8 밤 할 일 미리 알람", d:"풀만 프론트에 10/9 조식 도시락(breakfast box) 요청 + 체크아웃 정산"}
+  {t:"10/8 밤 할 일 미리 알람", d:"짐 미리 싸두기 + 체크아웃 정산 미리 해두면 10/9 아침이 편함 (호텔 도시락 제공 없음)"}
 ]}
 ];
 
@@ -986,6 +995,56 @@ function show(i){
       ta.focus();
     }
   });
+
+  /* 전체 메모 복사: 전역 메모장 + 일정별 메모를 한 덩어리 텍스트로 모아서
+     클립보드에 복사 — 이걸 Claude 채팅/카톡에 붙여넣으면 내용을 그대로
+     전달할 수 있음 (기기 저장소는 Claude가 직접 읽을 수 없기 때문에,
+     복사해서 붙여넣는 방식으로 "전달"하는 것) */
+  const copyAllBtn = document.getElementById("memoCopyAll");
+  if(copyAllBtn){
+    copyAllBtn.addEventListener("click", ()=>{
+      let out = "";
+      let raw = null;
+      try{ raw = localStorage.getItem(KEY); }catch(e){}
+      if(raw && raw.trim()){
+        out += "【전체 메모장】\n" + raw.trim() + "\n\n";
+      }
+      let noteBlock = "";
+      DAYS.forEach((day,i)=>{
+        day.items.forEach((it,j)=>{
+          let v = null;
+          try{ v = localStorage.getItem("pq_note_"+i+"_"+j); }catch(e){}
+          if(v && v.trim()){
+            noteBlock += `- [${day.d} ${it.t}] ${it.h}: ${v.trim()}\n`;
+          }
+        });
+      });
+      if(noteBlock){
+        out += "【일정별 메모】\n" + noteBlock;
+      }
+      if(!out.trim()){
+        toast("복사할 메모가 아직 없어요");
+        return;
+      }
+      const done = ()=>toast("메모 전체 복사 완료! Claude 채팅에 붙여넣어줘");
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(out).then(done).catch(()=>fallbackCopy(out, done));
+      } else {
+        fallbackCopy(out, done);
+      }
+      function fallbackCopy(text, cb){
+        const ta2 = document.createElement("textarea");
+        ta2.value = text;
+        ta2.style.position = "fixed";
+        ta2.style.opacity = "0";
+        document.body.appendChild(ta2);
+        ta2.select();
+        try{ document.execCommand("copy"); cb(); }
+        catch(e){ toast("복사 실패 — 길게 눌러 직접 복사해주세요"); }
+        document.body.removeChild(ta2);
+      }
+    });
+  }
 })();
 </script>
 </body>
