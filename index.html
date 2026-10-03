@@ -138,6 +138,8 @@
   .act.map:active{transform:scale(.97)}
   .act.dir{background:#fff;border-color:var(--line);color:var(--ink)}
   .act.sv{background:#FFF3EC;border-color:#F7D4C0;color:#C4502A}
+  .act.nv{background:#03C75A;color:#fff}
+  .act.nv .nv-n{font-weight:900;font-size:12px;line-height:1}
 
   /* 플라이트 카드 (보딩패스) */
   .bp{
@@ -470,6 +472,8 @@ const P = {
 const mapUrl = p => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.n)}` + (p.id ? `&query_place_id=${p.id}` : "");
 const dirUrl = p => `https://www.google.com/maps/dir/?api=1&destination=${p.la},${p.lo}` + (p.id ? `&destination_place_id=${p.id}` : "") + `&travelmode=driving`;
 const svUrl  = p => `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.la},${p.lo}`;
+/* 네이버지도 딥링크 — 장소명 검색 + 좌표 중심(c=경도,위도,줌) 으로 해외 장소도 근처에서 찾도록 */
+const nvUrl  = p => `https://map.naver.com/p/search/${encodeURIComponent(p.n)}?c=${p.lo},${p.la},15,0,0,0,dh`;
 
 /* ───────── 일정 데이터 ───────── */
 const DAYS = [
@@ -558,7 +562,8 @@ function acts(loc, loc2){
   let h = `<div class="acts">
     <a class="act map" target="_blank" rel="noopener" href="${mapUrl(loc)}">${svgPin}지도</a>
     <a class="act dir" target="_blank" rel="noopener" href="${dirUrl(loc)}">${svgDir}길찾기</a>
-    <a class="act sv"  target="_blank" rel="noopener" href="${svUrl(loc)}">${svgEye}거리뷰</a>`;
+    <a class="act sv"  target="_blank" rel="noopener" href="${svUrl(loc)}">${svgEye}거리뷰</a>
+    <a class="act nv"  target="_blank" rel="noopener" href="${nvUrl(loc)}"><span class="nv-n">N</span>네이버지도</a>`;
   if(loc2) h += `<a class="act dir" target="_blank" rel="noopener" href="${mapUrl(loc2)}">${svgPin}${loc2.n.split(" ")[0]} 지도</a>`;
   return h + `</div>`;
 }
